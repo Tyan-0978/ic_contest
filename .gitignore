@@ -1,0 +1,22 @@
+# verilog simulation files
+BSSLib.lib++/
+nWaveLog/
+xcelium.d/
+xmverilog*
+xrun*
+novas*
+*.fsdb
+*.log
+
+# synthesis
+*.X
+MODEL/
+*.rep
+*.txt
+tsmc13.v
+default.svf
+*.ddc
+*.sdf
+
+# vim files
+*.swp
