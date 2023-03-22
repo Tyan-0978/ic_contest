@@ -167,6 +167,7 @@ always @(posedge CLK or posedge RST) begin
         shift_count <= next_shift_count;
         turn_count <= next_turn_count;
     end
+end
 
 // -----------------------------------------------------------------------------
 // adder FSM
@@ -191,7 +192,7 @@ always @(*) begin
                 next_adder_state = AS_ADD_COST;
             end
         end
-        AS_UPDATE_MIN: next_state = AS_WAIT_PERM;
+        AS_UPDATE_MIN: next_adder_state = AS_WAIT_PERM;
 
         default: next_adder_state = AS_WAIT_PERM;
     endcase
@@ -201,7 +202,7 @@ always @(*) begin
         AS_WAIT_PERM: next_adder_count = 0;
         AS_ADD_COST: begin
             if (adder_count == 8) begin
-                next_adder_count = 0
+                next_adder_count = 0;
             end
             else begin
                 next_adder_count = adder_count + 1;
@@ -222,6 +223,7 @@ always @(posedge CLK or posedge RST) begin
         adder_state <= next_adder_state;
         adder_count <= next_adder_count;
     end
+end
 
 // -----------------------------------------------------------------------------
 // combinational part
@@ -234,7 +236,7 @@ always @(*) begin
     find_right_swap = (perm[6] >= perm_ext[0]);
 
     // next permutation registers
-    case (perm_state) begin
+    case (perm_state)
         S_FIND_LEFT  : begin
             if (find_left_swap) begin
                 for (i = 0; i <= 7; i = i + 1) begin
@@ -306,6 +308,7 @@ always @(*) begin
                 for (i = 0; i <= 5; i = i + 1) begin
                     next_perm_ext[i] = perm_ext[i];
                     next_perm_turn[i] = perm_turn[i];
+                end
             end
             else begin
                 next_perm[7] = perm_ext[0];
@@ -366,13 +369,12 @@ always @(*) begin
                 next_perm_turn[i] = 0;
             end
         end
-    end
+    endcase
 
     // next workers / jobs
     case (adder_state)
         AS_WAIT_PERM: begin
-            if (perm_state == S_WAIT_ADDER 
-                    || (perm_state == S_REVERSE && shift_count == 0)) begin
+            if ((perm_state == S_WAIT_ADDER) || (perm_state == S_REVERSE && shift_count == 0)) begin
                 for (i = 0; i <= 7; i = i + 1) begin
                     next_workers[i] = perm[i];
                 end
