@@ -1,7 +1,7 @@
 `timescale 1ns/10ps
 `define CYCLE      10.0  
 `define SDFFILE    "./JAM_syn.sdf"
-`define End_CYCLE  10000000
+`define End_CYCLE  1000000
 `define PAT        "cost_rom"
 
 `ifdef P1
@@ -155,7 +155,7 @@ reg wait_valid;
 reg [2:0] W_s;
 reg [2:0] J_s;
 assign Cost=costrom[8*W_s+J_s];
-always @(posedge CLK ) begin
+always @(negedge CLK ) begin
     W_s <=  #1 W;
     J_s <=  #1 J;
 end
