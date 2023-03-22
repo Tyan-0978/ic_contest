@@ -6,6 +6,11 @@ link
 
 #Setting Clock Constraints
 source -echo -verbose JAM.sdc
+
+set_operating_conditions -min_library fast -min fast  -max_library slow -max slow
+set_wire_load_model -name tsmc13_wl10 -library slow
+set_fix_multiple_port_nets -all -buffer_constants [get_designs *]
+
 check_design
 set high_fanout_net_threshold 0
 uniquify
