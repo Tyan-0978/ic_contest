@@ -35,8 +35,9 @@ integer i;
 // signals
 // -----------------------------------------------------------------------------
 // control wires
-reg finished, next_finished;
-reg find_left_swap, find_right_swap;
+reg  finished, next_finished;
+wire no_perm_left;
+wire find_left_swap, find_right_swap;
 
 // permutation FSM
 reg [2:0] perm_state, next_perm_state;
@@ -60,6 +61,9 @@ reg [3:0] min_count, next_min_count;
 // worker / job shift registers
 reg [2:0] workers [0:7], next_workers [0:7];
 reg [2:0] jobs    [0:7], next_jobs    [0:7];
+
+// debug
+//reg debug1;
 
 // -----------------------------------------------------------------------------
 // outputs
@@ -94,7 +98,7 @@ always @(*) begin
             end
         end
         S_WAIT_ADDER: begin
-            if (adder_state == AS_WAIT_PERM || !finished) begin
+            if (adder_state == AS_WAIT_PERM && !finished) begin
                 next_perm_state = S_FIND_LEFT;
             end
             else begin
@@ -228,12 +232,12 @@ end
 // -----------------------------------------------------------------------------
 // combinational part
 // -----------------------------------------------------------------------------
-always @(*) begin
-    next_finished = (finished || (shift_count == 6 && !find_left_swap));
+assign no_perm_left = (perm_state == S_FIND_LEFT && shift_count == 6 && !find_left_swap);
+assign find_left_swap = (perm[6] < perm[7]);
+assign find_right_swap = (perm[6] >= perm_ext[0]);
 
-    // permutation control wires
-    find_left_swap = (perm[6] > perm[7]);
-    find_right_swap = (perm[6] >= perm_ext[0]);
+always @(*) begin
+    next_finished = (finished || no_perm_left);
 
     // next permutation registers
     case (perm_state)
@@ -266,17 +270,14 @@ always @(*) begin
         end
         S_FIND_RIGHT : begin
             if (find_right_swap) begin
-                for (i = 0; i <= 6; i = i + 1) begin
+                for (i = 0; i <= 5; i = i + 1) begin
                     next_perm[i] = perm[i];
                 end
-                next_perm[7] = perm_ext[0];  // swap
-
-                next_perm_ext[0] = perm[7];  // swap
-                for (i = 1; i <= 5; i = i + 1) begin
-                    next_perm_ext[i] = perm_ext[i];
-                end
+                next_perm[6] = perm[7];  // swap
+                next_perm[7] = perm[6];  // swap
 
                 for (i = 0; i <= 5; i = i + 1) begin
+                    next_perm_ext[i] = perm_ext[i];
                     next_perm_turn[i] = perm_turn[i];
                 end
             end
@@ -291,7 +292,7 @@ always @(*) begin
                 end
                 next_perm_ext[5] = 0;
 
-                next_perm_ext[0] = perm[7];
+                next_perm_turn[0] = perm[7];
                 for (i = 1; i <= 5; i = i + 1) begin
                     next_perm_turn[i] = perm_turn[i-1];
                 end
@@ -318,7 +319,7 @@ always @(*) begin
                 end
                 next_perm_ext[5] = 0;
 
-                next_perm_ext[0] = perm[7];
+                next_perm_turn[0] = perm[7];
                 for (i = 1; i <= 5; i = i + 1) begin
                     next_perm_turn[i] = perm_turn[i-1];
                 end
@@ -374,19 +375,18 @@ always @(*) begin
     // next workers / jobs
     case (adder_state)
         AS_WAIT_PERM: begin
-            if ((perm_state == S_WAIT_ADDER) || (perm_state == S_REVERSE && shift_count == 0)) begin
+            if ((perm_state == S_WAIT_ADDER) || 
+                    (perm_state == S_REVERSE && shift_count == 0)) begin
                 for (i = 0; i <= 7; i = i + 1) begin
                     next_workers[i] = perm[i];
+                    next_jobs[i] = i;
                 end
             end
             else begin
                 for (i = 0; i <= 7; i = i + 1) begin
                     next_workers[i] = workers[i];
+                    next_jobs[i] = jobs[i];
                 end
-            end
-
-            for (i = 0; i <= 7; i = i + 1) begin
-                next_jobs[i] = jobs[i];
             end
         end
         AS_ADD_COST: begin
@@ -395,7 +395,7 @@ always @(*) begin
                 next_jobs[i] = jobs[i+1];
             end
             next_workers[7] = workers[0];
-            next_jobs[7] = jobs[7];
+            next_jobs[7] = jobs[0];
         end
         AS_UPDATE_MIN: begin
             for (i = 0; i <= 7; i = i + 1) begin
@@ -415,7 +415,14 @@ always @(*) begin
     // next psum
     case (adder_state)
         AS_WAIT_PERM:  next_psum = 0;
-        AS_ADD_COST:   next_psum = psum + Cost;
+        AS_ADD_COST: begin
+            if (adder_count == 8) begin
+                next_psum = psum;
+            end
+            else begin
+                next_psum = psum + Cost;
+            end
+        end
         AS_UPDATE_MIN: next_psum = psum;
 
         default: next_psum = 0;
