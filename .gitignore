@@ -18,6 +18,7 @@ tsmc13.v
 default.svf
 *.ddc
 *.sdf
+*.qor
 
 # vim files
 *.swp
