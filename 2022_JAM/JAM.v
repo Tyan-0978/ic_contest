@@ -416,7 +416,7 @@ always @(*) begin
     case (adder_state)
         AS_WAIT_PERM:  next_psum = 0;
         AS_ADD_COST: begin
-            if (adder_count == 8) begin
+            if (adder_count == 0) begin
                 next_psum = psum;
             end
             else begin
@@ -466,7 +466,6 @@ always @(posedge CLK or posedge RST) begin
             workers[i] <= 0;
             jobs[i]    <= i;
         end
-        adder_count <= 0;
         psum <= 0;
         min_cost <= MAX_COST;
         min_count <= 1;
@@ -484,7 +483,6 @@ always @(posedge CLK or posedge RST) begin
             workers[i] <= next_workers[i];
             jobs[i]    <= next_jobs[i];
         end
-        adder_count <= next_adder_count;
         psum <= next_psum;
         min_cost <= next_min_cost;
         min_count <= next_min_count;
