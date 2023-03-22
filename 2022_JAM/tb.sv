@@ -155,7 +155,7 @@ reg wait_valid;
 reg [2:0] W_s;
 reg [2:0] J_s;
 assign Cost=costrom[8*W_s+J_s];
-always @(negedge CLK ) begin
+always @(posedge CLK ) begin
     W_s <=  #1 W;
     J_s <=  #1 J;
 end
